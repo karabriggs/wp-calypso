@@ -8,7 +8,6 @@
  * External dependencies
  */
 const fs = require( 'fs' );
-const HappyPack = require( 'happypack' );
 const HardSourceWebpackPlugin = require( 'hard-source-webpack-plugin' );
 const path = require( 'path' );
 const webpack = require( 'webpack' );
@@ -24,6 +23,8 @@ const bundleEnv = config( 'env' );
 /**
  * Internal variables
  */
+const isDevelopment = bundleEnv === 'development';
+
 const commitSha = process.env.hasOwnProperty( 'COMMIT_SHA' ) ? process.env.COMMIT_SHA : '(unknown)';
 
 // disable add-module-exports. TODO: remove add-module-exports from babelrc. requires fixing jest tests
@@ -106,6 +107,7 @@ const webpackConfig = {
 		path: path.join( __dirname, 'build' ),
 		filename: 'bundle.js',
 	},
+	mode: isDevelopment ? 'development' : 'production',
 	module: {
 		rules: [
 			{
@@ -123,7 +125,7 @@ const webpackConfig = {
 			{
 				test: /\.jsx?$/,
 				exclude: /(node_modules|devdocs[\/\\]search-index)/,
-				loader: [ 'happypack/loader' ],
+				use: [ 'thread-loader', babelLoader ],
 			},
 			{
 				test: /node_modules[\/\\](redux-form|react-redux)[\/\\]es/,
@@ -163,7 +165,6 @@ const webpackConfig = {
 			COMMIT_SHA: JSON.stringify( commitSha ),
 			'process.env.NODE_ENV': JSON.stringify( bundleEnv ),
 		} ),
-		new HappyPack( { loaders: [ babelLoader ] } ),
 		new webpack.NormalModuleReplacementPlugin( /^lib[\/\\]abtest$/, 'lodash/noop' ), // Depends on BOM
 		new webpack.NormalModuleReplacementPlugin( /^lib[\/\\]analytics$/, 'lodash/noop' ), // Depends on BOM
 		new webpack.NormalModuleReplacementPlugin( /^lib[\/\\]user$/, 'lodash/noop' ), // Depends on BOM
