@@ -3,7 +3,8 @@
  * External dependencies
  */
 import deterministicStringify from 'json-stable-stringify';
-import { every, has, isEmpty } from 'lodash';
+import { isEmpty, pick } from 'lodash';
+import qs from 'qs';
 
 /**
  * Internal dependencies
@@ -55,12 +56,17 @@ function combineMiddlewares( ...middlewares ) {
 	return function( req, res, next ) {
 		req.context = getEnhancedContext( req, res );
 		applyMiddlewares( req.context, next, ...middlewares, () => {
+			// Do not expose "non-cacheable" query parameters to the SSR engine otherwise sensitive
+			// information could leak into the cache
+			req.context.query = getFilteredQuery( req );
+			const querystring = qs.stringify( req.context.query );
+			req.context.path = req.context.originalUrl =
+				req.context.pathname + ( querystring ? '?' + querystring : '' );
 			next();
 		} );
 	};
 }
 
-// TODO: Maybe merge into getDefaultContext().
 function getEnhancedContext( req, res ) {
 	return Object.assign( {}, req.context, {
 		isLoggedIn: req.cookies.wordpress_logged_in,
@@ -75,6 +81,11 @@ function getEnhancedContext( req, res ) {
 		redirect: res.redirect.bind( res ),
 		res,
 	} );
+}
+
+export function getFilteredQuery( req ) {
+	const cacheQueryKeys = ( req.context && req.context.cacheQueryKeys ) || [];
+	return pick( req.query, cacheQueryKeys );
 }
 
 function applyMiddlewares( context, expressNext, ...middlewares ) {
@@ -98,23 +109,13 @@ function compose( ...functions ) {
  * Get a key used to cache SSR result for the request, or null to disable the cache.
  *
  * @param  {Object}        context                The request context
- * @param  {Array<string>} context.cacheQueryKeys Query parameter keys that should be cached
  * @param  {string}        context.pathname       Request path
  * @param  {Object}        context.query          Query parameters
  * @return {?string}                              The cache key or null to disable cache
  */
-export function getCacheKey( { cacheQueryKeys, pathname, query } ) {
-	// If we have a query, do not cache if any params are not in cacheQueryKeys
+export function getCacheKey( { pathname, query } ) {
 	if ( ! isEmpty( query ) ) {
-		// Cache if our all of the query parameters are in cacheQueryKeys
-		if (
-			! isEmpty( cacheQueryKeys ) &&
-			Object.keys( query ).length === cacheQueryKeys.length &&
-			every( cacheQueryKeys, key => has( query, key ) )
-		) {
-			return pathname + '?' + deterministicStringify( query );
-		}
-		return null;
+		return pathname + '?' + deterministicStringify( query );
 	}
 	return pathname;
 }

@@ -48,12 +48,6 @@ export function login( context, next ) {
 	const { query: { client_id, redirect_to } } = context;
 
 	if ( client_id ) {
-		if ( ! redirect_to ) {
-			const error = new Error( 'The `redirect_to` query parameter is missing.' );
-			error.status = 401;
-			return next( error );
-		}
-
 		const parsedRedirectUrl = parseUrl( redirect_to );
 		const redirectQueryString = qs.parse( parsedRedirectUrl.query );
 
