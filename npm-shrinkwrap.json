@@ -12035,7 +12035,7 @@
       "integrity": "sha1-gV7R9uvGWSb4ZbMQwHE7yzMVzks="
     },
     "prettier": {
-      "version": "github:Automattic/calypso-prettier#c56b42511ec98ba6d8f72b6c391e0a626e90f531",
+      "version": "github:Automattic/calypso-prettier#503d7779e8e95f0ea0d6dc55056db41c16835cb1",
       "dev": true,
       "requires": {
         "babel-code-frame": "7.0.0-beta.3",
