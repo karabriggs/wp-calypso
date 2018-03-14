@@ -106,9 +106,8 @@ export class OrgCredentialsForm extends Component {
 	}
 
 	formFields() {
-		const { installError, isResponseCompleted, siteToConnect, translate } = this.props;
+		const { translate } = this.props;
 		const { isSubmitting, password, username } = this.state;
-		const isFetching = ! installError && ! isResponseCompleted && isSubmitting && siteToConnect;
 
 		return (
 			<div>
@@ -140,22 +139,21 @@ export class OrgCredentialsForm extends Component {
 							value={ password || '' }
 						/>
 					</div>
-					{ isFetching ? <Spinner /> : null }
+					{ isSubmitting ? <Spinner /> : null }
 				</div>
 			</div>
 		);
 	}
 
 	renderButtonLabel() {
-		const { installError, isResponseCompleted, siteToConnect, translate } = this.props;
+		const { isResponseCompleted, translate } = this.props;
 		const { isSubmitting } = this.state;
-		const isFetching = ! installError && ! isResponseCompleted && isSubmitting && siteToConnect;
 
 		if ( isResponseCompleted ) {
 			return translate( 'Jetpack installed' );
 		}
 
-		if ( ! isFetching ) {
+		if ( ! isSubmitting ) {
 			return translate( 'Install Jetpack' );
 		}
 
@@ -163,10 +161,12 @@ export class OrgCredentialsForm extends Component {
 	}
 
 	formFooter() {
+		const { isSubmitting } = this.state;
+
 		return (
 			<FormButton
 				className="jetpack-connect__credentials-submit"
-				disabled={ ! this.state.username || ! this.state.password }
+				disabled={ ! this.state.username || ! this.state.password || isSubmitting }
 			>
 				{ this.renderButtonLabel() }
 			</FormButton>
@@ -231,8 +231,10 @@ export default connect(
 		const siteToConnect = jetpackConnectSite.url;
 		const installError = getJetpackRemoteInstallErrorCode( state, siteToConnect );
 		const isResponseCompleted = isJetpackRemoteInstallComplete( state, siteToConnect );
+		const isFetching = ! installError && ! isResponseCompleted && siteToConnect;
 		return {
 			installError,
+			isFetching,
 			isResponseCompleted,
 			siteToConnect,
 		};
